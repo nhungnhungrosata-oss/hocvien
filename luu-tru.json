@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "note": "File này dùng để lưu dữ liệu khóa học, video và app. Khi sửa app, không ghi đè file này nếu đã có dữ liệu thật.",
+  "courses": [],
+  "apps": [],
+  "passHash": null
+}
