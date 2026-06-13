@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Học Viên Online</title>
+  <title>Học Viên Online - Quản lý video</title>
   <meta name="description" content="Website học video, quản lý khóa học và app học tập." />
   <style>
     :root{
@@ -911,6 +911,31 @@
       background:var(--danger-soft);
       border-color:rgba(220,38,38,.20);
     }
+
+    .video-actions{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .small-btn.edit{
+      color:#1d4ed8;
+      background:#dbeafe;
+      border-color:rgba(37,99,235,.22);
+    }
+
+    .edit-video-box{
+      margin:10px 0 0;
+      border-top:1px dashed #cbd5e1;
+      padding-top:12px;
+      display:none;
+    }
+
+    .edit-video-box.show{
+      display:block;
+    }
+
 
     .video-admin{
       margin:12px 0 0 95px;
@@ -1963,11 +1988,34 @@
           <div class="video-admin">
             ${(course.videos || []).map((video,index)=>`
               <div class="video-admin-row">
-                <div>
+                <div style="flex:1;min-width:220px;">
                   <strong>${String(index+1).padStart(2,"0")}. ${escapeHtml(video.title)}</strong>
                   ${video.note ? `<div>${escapeHtml(video.note)}</div>` : ""}
+                  <div class="edit-video-box" data-edit-box="${escapeHtml(video.id)}">
+                    <div class="form-grid">
+                      <div class="field">
+                        <label>Tên video</label>
+                        <input type="text" class="edit-video-title" data-course-id="${escapeHtml(course.id)}" data-video-id="${escapeHtml(video.id)}" value="${escapeHtml(video.title)}">
+                      </div>
+                      <div class="field">
+                        <label>Link YouTube / Google Drive</label>
+                        <input type="text" class="edit-video-url" data-course-id="${escapeHtml(course.id)}" data-video-id="${escapeHtml(video.id)}" value="${escapeHtml(video.url)}">
+                      </div>
+                      <div class="field full">
+                        <label>Ghi chú</label>
+                        <textarea class="edit-video-note" data-course-id="${escapeHtml(course.id)}" data-video-id="${escapeHtml(video.id)}">${escapeHtml(video.note || "")}</textarea>
+                      </div>
+                    </div>
+                    <div class="actions">
+                      <button class="btn secondary" type="button" data-action="saveVideoEdit" data-course-id="${escapeHtml(course.id)}" data-video-id="${escapeHtml(video.id)}">Lưu thay đổi</button>
+                      <button class="btn ghost" type="button" data-action="cancelVideoEdit" data-video-id="${escapeHtml(video.id)}">Hủy</button>
+                    </div>
+                  </div>
                 </div>
-                <button class="small-btn danger" type="button" data-action="deleteVideo" data-course-id="${escapeHtml(course.id)}" data-video-id="${escapeHtml(video.id)}">Xóa video</button>
+                <div class="video-actions">
+                  <button class="small-btn edit" type="button" data-action="editVideo" data-video-id="${escapeHtml(video.id)}">Sửa video</button>
+                  <button class="small-btn danger" type="button" data-action="deleteVideo" data-course-id="${escapeHtml(course.id)}" data-video-id="${escapeHtml(video.id)}">Xóa video</button>
+                </div>
               </div>
             `).join("")}
           </div>
@@ -2003,6 +2051,60 @@
           await saveCourses();
           renderAdminCourses();
           toast("Đã xóa khóa học.");
+        };
+      });
+
+      wrap.querySelectorAll("[data-action='editVideo']").forEach(btn=>{
+        btn.onclick = ()=>{
+          const box = wrap.querySelector(`[data-edit-box="${CSS.escape(btn.dataset.videoId)}"]`);
+          if(!box) return;
+          box.classList.add("show");
+        };
+      });
+
+      wrap.querySelectorAll("[data-action='cancelVideoEdit']").forEach(btn=>{
+        btn.onclick = ()=>{
+          const box = wrap.querySelector(`[data-edit-box="${CSS.escape(btn.dataset.videoId)}"]`);
+          if(!box) return;
+          box.classList.remove("show");
+        };
+      });
+
+      wrap.querySelectorAll("[data-action='saveVideoEdit']").forEach(btn=>{
+        btn.onclick = async ()=>{
+          const courseId = btn.dataset.courseId;
+          const videoId = btn.dataset.videoId;
+          const course = state.courses.find(c=>c.id === courseId);
+          if(!course) return;
+
+          const video = (course.videos || []).find(v=>v.id === videoId);
+          if(!video) return;
+
+          const titleEl = wrap.querySelector(`.edit-video-title[data-course-id="${CSS.escape(courseId)}"][data-video-id="${CSS.escape(videoId)}"]`);
+          const urlEl = wrap.querySelector(`.edit-video-url[data-course-id="${CSS.escape(courseId)}"][data-video-id="${CSS.escape(videoId)}"]`);
+          const noteEl = wrap.querySelector(`.edit-video-note[data-course-id="${CSS.escape(courseId)}"][data-video-id="${CSS.escape(videoId)}"]`);
+
+          const title = titleEl.value.trim();
+          const url = urlEl.value.trim();
+          const note = noteEl.value.trim();
+
+          if(!title || !url){
+            toast("Vui lòng nhập tên video và link video.");
+            return;
+          }
+
+          if(!toEmbedUrl(url)){
+            toast("Link video chưa hợp lệ.");
+            return;
+          }
+
+          video.title = title;
+          video.url = url;
+          video.note = note;
+
+          await saveCourses();
+          renderAdminCourses();
+          toast("Đã cập nhật video.");
         };
       });
 
