@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lớp Học Video</title>
+<style>
+  :root{
+    --ink:#1c2b2d;
+    --paper:#f6f1e7;
+    --line:#d8cdb8;
+    --accent:#c1542c;
+    --accent-soft:#f0ddd2;
+    --green:#3c5d4e;
+    --font-display:'Georgia', 'Times New Roman', serif;
+    --font-body: 'Helvetica Neue', Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--font-body);
+    line-height:1.5;
+  }
+  header{
+    border-bottom:2px solid var(--ink);
+    padding:18px 20px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:12px;
+    position:sticky;
+    top:0;
+    background:var(--paper);
+    z-index:10;
+  }
+  header h1{
+    font-family:var(--font-display);
+    font-size:24px;
+    margin:0;
+    letter-spacing:0.5px;
+  }
+  nav{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  nav button{
+    background:none;
+    border:1px solid var(--ink);
+    color:var(--ink);
+    padding:7px 16px;
+    font-size:14px;
+    cursor:pointer;
+    font-family:var(--font-body);
+    transition:0.15s;
+    border-radius:2px;
+  }
+  nav button.active, nav button:hover{
+    background:var(--ink);
+    color:var(--paper);
+  }
+  @media (max-width: 600px){
+    header{padding:14px 16px;}
+    header h1{font-size:20px;}
+    nav button{padding:6px 12px; font-size:13px;}
+    main{padding:20px 14px 60px;}
+    .panel{padding:16px;}
+    .course-grid, .app-grid{grid-template-columns:1fr 1fr; gap:12px;}
+    .course-card h3, .app-card h3{font-size:16px;}
+  }
+  main{max-width:1080px; margin:0 auto; padding:30px 20px 80px;}
+
+  /* course list */
+  .course-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:22px;}
+  .course-card{
+    border:1px solid var(--line);
+    background:#fff;
+    cursor:pointer;
+    transition:0.2s;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+  .course-card:hover{border-color:var(--accent); transform:translateY(-3px); box-shadow:0 6px 18px rgba(28,43,45,0.08);}
+  .card-thumb{
+    width:100%; aspect-ratio:16/9; overflow:hidden; background:linear-gradient(135deg,var(--accent-soft),var(--paper));
+    position:relative;
+  }
+  .card-thumb img{width:100%; height:100%; object-fit:cover; display:block;}
+  .card-thumb .ph{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-display); font-size:38px; color:var(--accent); opacity:0.4;
+  }
+  .card-body{padding:16px 18px;}
+  .course-card .eyebrow{font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--accent); margin-bottom:6px;}
+  .course-card h3{font-family:var(--font-display); margin:0 0 6px; font-size:20px;}
+  .course-card p{font-size:13px; color:#5a5048; margin:0;}
+  .course-card .count{
+    margin-top:12px; font-size:12px; color:var(--green); font-weight:bold;
+  }
+
+  /* video list */
+  .back-link{cursor:pointer; color:var(--accent); font-size:14px; display:inline-block; margin-bottom:16px;}
+  .video-list{display:flex; flex-direction:column; gap:10px;}
+  .video-item{
+    border:1px solid var(--line);
+    background:#fff;
+    padding:14px 16px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    cursor:pointer;
+  }
+  .video-item:hover{border-color:var(--accent);}
+  .video-item .vt{font-weight:bold;}
+  .video-item .vn{font-size:12px; color:#888; font-family:var(--font-display); margin-right:10px;}
+  .player-wrap{margin-bottom:20px;}
+  .player-wrap iframe, .player-wrap video{
+    width:100%; aspect-ratio:16/9; border:1px solid var(--ink); background:#000;
+  }
+
+  /* forms / admin */
+  .panel{border:1px solid var(--line); background:#fff; padding:22px; margin-bottom:20px;}
+  .panel h2{font-family:var(--font-display); margin-top:0; font-size:20px; border-bottom:1px solid var(--line); padding-bottom:10px;}
+  label{display:block; font-size:13px; font-weight:bold; margin:12px 0 4px;}
+  input[type=text], input[type=password], textarea{
+    width:100%; padding:9px 10px; border:1px solid var(--line); background:var(--paper);
+    font-family:var(--font-body); font-size:14px;
+  }
+  textarea{resize:vertical; min-height:60px;}
+  .btn{
+    background:var(--accent); color:#fff; border:none; padding:10px 20px;
+    cursor:pointer; font-size:14px; font-family:var(--font-body); margin-top:14px;
+  }
+  .btn.secondary{background:var(--green);}
+  .btn.danger{background:#9a4438;}
+  .row{display:flex; gap:10px; flex-wrap:wrap;}
+  .row > div{flex:1; min-width:160px;}
+  .admin-course-row{
+    border:1px solid var(--line); padding:12px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; background:#fff;
+  }
+  .admin-video-row{
+    border-left:3px solid var(--accent-soft); padding:8px 10px; margin:6px 0 6px 14px; display:flex; justify-content:space-between; align-items:center; font-size:13px; background:#fdfbf6;
+  }
+  .empty{color:#888; font-style:italic; padding:30px 0; text-align:center;}
+  .small-btn{font-size:12px; padding:4px 10px; border:1px solid var(--ink); background:none; cursor:pointer;}
+  .small-btn.danger{border-color:#9a4438; color:#9a4438;}
+  .hint{font-size:12px; color:#888; margin-top:4px;}
+  .login-box{max-width:340px; margin:60px auto;}
+  .mini-thumb{
+    width:40px; height:40px; object-fit:cover; border:1px solid var(--line); margin-right:10px; vertical-align:middle; flex-shrink:0;
+  }
+  .mini-thumb-ph{
+    width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center;
+    border:1px solid var(--line); margin-right:10px; font-family:var(--font-display); color:#999; vertical-align:middle; flex-shrink:0;
+    background:var(--paper);
+  }
+  .admin-course-row .left, .admin-course-row .left-row{display:flex; align-items:center;}
+
+  /* apps */
+  .app-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:22px;}
+  .app-card{
+    border:1px solid var(--line);
+    background:#fff;
+    text-decoration:none;
+    color:var(--ink);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    transition:0.2s;
+  }
+  .app-card:hover{border-color:var(--green); transform:translateY(-3px); box-shadow:0 6px 18px rgba(28,43,45,0.08);}
+  .app-card .card-thumb{background:linear-gradient(135deg,#dfe8e2,var(--paper));}
+  .app-card .card-thumb .ph{color:var(--green);}
+  .app-card .card-body{padding:16px 18px;}
+  .app-card .eyebrow{font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--green); margin-bottom:6px;}
+  .app-card h3{font-family:var(--font-display); margin:0 0 4px; font-size:18px;}
+  .app-card p{font-size:13px; color:#5a5048; margin:0;}
+</style>
+</head>
+<body>
+<header>
+  <h1>📚 Lớp Học Video</h1>
+  <nav>
+    <button id="navHome" class="active">Khóa học</button>
+    <button id="navApps">App</button>
+    <button id="navAdmin">Quản trị</button>
+  </nav>
+</header>
+<main id="app"></main>
+
+<script>
+const STORAGE_KEY = "courses_v1";
+const APPS_KEY = "apps_v1";
+const PASS_KEY = "admin_pass_v1";
+const DEFAULT_PASS = "admin123";
+
+let state = {
+  view: "home",      // home | course | apps | admin | adminLogin
+  courses: [],
+  apps: [],
+  currentCourseId: null,
+  currentVideoId: null,
+  isAdmin: false,
+};
+
+// ---------- storage ----------
+async function loadCourses(){
+  try{
+    const r = await window.storage.get(STORAGE_KEY, true);
+    state.courses = r ? JSON.parse(r.value) : [];
+  }catch(e){ state.courses = []; }
+}
+async function saveCourses(){
+  try{
+    await window.storage.set(STORAGE_KEY, JSON.stringify(state.courses), true);
+  }catch(e){ console.error("save failed", e); }
+}
+async function getAdminPass(){
+  try{
+    const r = await window.storage.get(PASS_KEY, true);
+    return r ? r.value : DEFAULT_PASS;
+  }catch(e){ return DEFAULT_PASS; }
+}
+async function setAdminPass(p){
+  await window.storage.set(PASS_KEY, p, true);
+}
+async function loadApps(){
+  try{
+    const r = await window.storage.get(APPS_KEY, true);
+    state.apps = r ? JSON.parse(r.value) : [];
+  }catch(e){ state.apps = []; }
+}
+async function saveApps(){
+  try{
+    await window.storage.set(APPS_KEY, JSON.stringify(state.apps), true);
+  }catch(e){ console.error("save failed", e); }
+}
+
+// ---------- helpers ----------
+function uid(){ return Math.random().toString(36).slice(2,9); }
+
+function toEmbedUrl(url){
+  url = url.trim();
+  // YouTube
+  let m = url.match(/(?:youtu\.be\/|v=|\/embed\/)([A-Za-z0-9_-]{6,})/);
+  if(m && url.includes('yout')) return `https://www.youtube.com/embed/${m[1]}`;
+  // Google Drive
+  m = url.match(/drive\.google\.com\/file\/d\/([^/]+)/);
+  if(m) return `https://drive.google.com/file/d/${m[1]}/preview`;
+  m = url.match(/[?&]id=([^&]+)/);
+  if(m && url.includes('drive')) return `https://drive.google.com/file/d/${m[1]}/preview`;
+  return url; // fallback, treat as direct embeddable
+}
+
+// ---------- render ----------
+const app = document.getElementById('app');
+
+function render(){
+  document.getElementById('navHome').classList.toggle('active', state.view==='home' || state.view==='course');
+  document.getElementById('navApps').classList.toggle('active', state.view==='apps');
+  document.getElementById('navAdmin').classList.toggle('active', state.view==='admin' || state.view==='adminLogin');
+
+  if(state.view === 'home') renderHome();
+  else if(state.view === 'course') renderCourse();
+  else if(state.view === 'apps') renderApps();
+  else if(state.view === 'adminLogin') renderAdminLogin();
+  else if(state.view === 'admin') renderAdmin();
+}
+
+function renderApps(){
+  if(state.apps.length === 0){
+    app.innerHTML = `<div class="empty">Chưa có app nào. Vào mục <strong>Quản trị</strong> để thêm.</div>`;
+    return;
+  }
+  app.innerHTML = `
+    <div class="app-grid">
+      ${state.apps.map((a,i)=>`
+        <a class="app-card" href="${escapeHtml(a.url)}" target="_blank" rel="noopener">
+          <div class="card-thumb">
+            ${a.image ? `<img src="${escapeHtml(a.image)}" alt="${escapeHtml(a.title)}">` : `<div class="ph">${escapeHtml((a.title||'A')[0].toUpperCase())}</div>`}
+          </div>
+          <div class="card-body">
+            <div class="eyebrow">App ${String(i+1).padStart(2,'0')}</div>
+            <h3>${escapeHtml(a.title)}</h3>
+            <p>${escapeHtml(a.description||'')}</p>
+          </div>
+        </a>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderHome(){
+  if(state.courses.length === 0){
+    app.innerHTML = `<div class="empty">Chưa có khóa học nào. Vào mục <strong>Quản trị</strong> để tạo khóa học đầu tiên.</div>`;
+    return;
+  }
+  app.innerHTML = `
+    <div class="course-grid">
+      ${state.courses.map((c,i)=>`
+        <div class="course-card" data-id="${c.id}">
+          <div class="card-thumb">
+            ${c.image ? `<img src="${escapeHtml(c.image)}" alt="${escapeHtml(c.title)}">` : `<div class="ph">${escapeHtml((c.title||'K')[0].toUpperCase())}</div>`}
+          </div>
+          <div class="card-body">
+            <div class="eyebrow">Bài ${String(i+1).padStart(2,'0')}</div>
+            <h3>${escapeHtml(c.title)}</h3>
+            <p>${escapeHtml(c.description||'')}</p>
+            <div class="count">${c.videos.length} video</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  app.querySelectorAll('.course-card').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      state.currentCourseId = el.dataset.id;
+      state.currentVideoId = null;
+      state.view = 'course';
+      render();
+    });
+  });
+}
+
+function renderCourse(){
+  const course = state.courses.find(c=>c.id===state.currentCourseId);
+  if(!course){ state.view='home'; render(); return; }
+  if(!state.currentVideoId && course.videos.length) state.currentVideoId = course.videos[0].id;
+  const video = course.videos.find(v=>v.id===state.currentVideoId);
+
+  app.innerHTML = `
+    <div class="back-link" id="backHome">← Quay lại danh sách khóa học</div>
+    <h2 style="font-family:var(--font-display); margin-top:0;">${escapeHtml(course.title)}</h2>
+    <p style="color:#5a5048; margin-top:-6px;">${escapeHtml(course.description||'')}</p>
+    ${ video ? `
+      <div class="player-wrap">
+        ${renderPlayer(video.url)}
+      </div>
+      <h3 style="font-family:var(--font-display); margin:0 0 6px;">${escapeHtml(video.title)}</h3>
+      ${ video.note ? `<p style="font-size:14px; color:#5a5048;">${escapeHtml(video.note)}</p>` : '' }
+    ` : '<div class="empty">Khóa học này chưa có video.</div>' }
+    <h4 style="margin-top:24px; font-family:var(--font-display);">Danh sách video</h4>
+    <div class="video-list">
+      ${course.videos.map((v,i)=>`
+        <div class="video-item ${v.id===state.currentVideoId?'active':''}" data-id="${v.id}" style="${v.id===state.currentVideoId?'border-color:var(--accent);background:var(--accent-soft);':''}">
+          <span><span class="vn">${String(i+1).padStart(2,'0')}</span><span class="vt">${escapeHtml(v.title)}</span></span>
+          ${v.id===state.currentVideoId? '<span style="font-size:12px;color:var(--accent);">▶ Đang xem</span>':''}
+        </div>
+      `).join('')}
+    </div>
+  `;
+  document.getElementById('backHome').onclick = ()=>{ state.view='home'; render(); };
+  app.querySelectorAll('.video-item').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      state.currentVideoId = el.dataset.id;
+      render();
+    });
+  });
+}
+
+function renderPlayer(url){
+  const embed = toEmbedUrl(url);
+  return `<iframe src="${embed}" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="no-referrer"></iframe>`;
+}
+
+function renderAdminLogin(){
+  app.innerHTML = `
+    <div class="panel login-box">
+      <h2>Đăng nhập quản trị</h2>
+      <label>Mật khẩu</label>
+      <input type="password" id="passInput" placeholder="Nhập mật khẩu admin">
+      <div class="hint">Mật khẩu mặc định: <code>admin123</code> (đổi được sau khi đăng nhập)</div>
+      <button class="btn" id="loginBtn">Đăng nhập</button>
+      <div id="loginErr" style="color:#9a4438; font-size:13px; margin-top:8px;"></div>
+    </div>
+  `;
+  document.getElementById('loginBtn').onclick = async ()=>{
+    const val = document.getElementById('passInput').value;
+    const real = await getAdminPass();
+    if(val === real){
+      state.isAdmin = true;
+      state.view = 'admin';
+      render();
+    }else{
+      document.getElementById('loginErr').textContent = 'Mật khẩu không đúng.';
+    }
+  };
+  document.getElementById('passInput').addEventListener('keydown', e=>{
+    if(e.key==='Enter') document.getElementById('loginBtn').click();
+  });
+}
+
+function renderAdmin(){
+  if(!state.isAdmin){ state.view='adminLogin'; render(); return; }
+
+  app.innerHTML = `
+    <div class="panel">
+      <h2>Tạo khóa học mới</h2>
+      <label>Tên khóa học</label>
+      <input type="text" id="newCourseTitle" placeholder="Ví dụ: Toán 9 - Chương 1">
+      <label>Mô tả ngắn</label>
+      <textarea id="newCourseDesc" placeholder="Mô tả ngắn về khóa học"></textarea>
+      <label>Link hình đại diện (tùy chọn)</label>
+      <input type="text" id="newCourseImg" placeholder="https://... (link ảnh)">
+      <div class="hint">Có thể dùng link ảnh từ Google Drive (chuyển sang chế độ "Anyone with the link"), Imgur, hoặc bất kỳ link ảnh trực tiếp.</div>
+      <button class="btn" id="addCourseBtn">+ Thêm khóa học</button>
+    </div>
+
+    <div class="panel">
+      <h2>Danh sách khóa học</h2>
+      <div id="coursesAdminList"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Thêm App / Link</h2>
+      <label>Tên app</label>
+      <input type="text" id="newAppTitle" placeholder="Ví dụ: Bài tập trắc nghiệm">
+      <label>Link</label>
+      <input type="text" id="newAppUrl" placeholder="https://...">
+      <label>Mô tả ngắn</label>
+      <textarea id="newAppDesc" placeholder="Mô tả ngắn về app"></textarea>
+      <label>Link hình đại diện (tùy chọn)</label>
+      <input type="text" id="newAppImg" placeholder="https://... (link ảnh)">
+      <button class="btn" id="addAppBtn">+ Thêm app</button>
+    </div>
+
+    <div class="panel">
+      <h2>Danh sách App</h2>
+      <div id="appsAdminList"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Đổi mật khẩu quản trị</h2>
+      <div class="row">
+        <div>
+          <label>Mật khẩu mới</label>
+          <input type="password" id="newPass" placeholder="Mật khẩu mới">
+        </div>
+        <div style="display:flex; align-items:flex-end;">
+          <button class="btn secondary" id="changePassBtn">Cập nhật mật khẩu</button>
+        </div>
+      </div>
+      <div id="passMsg" style="font-size:13px; margin-top:8px; color:var(--green);"></div>
+    </div>
+
+    <button class="btn danger" id="logoutBtn">Đăng xuất</button>
+  `;
+
+  document.getElementById('addCourseBtn').onclick = async ()=>{
+    const title = document.getElementById('newCourseTitle').value.trim();
+    const desc = document.getElementById('newCourseDesc').value.trim();
+    const image = document.getElementById('newCourseImg').value.trim();
+    if(!title) return;
+    state.courses.push({ id: uid(), title, description: desc, image, videos: [] });
+    await saveCourses();
+    document.getElementById('newCourseTitle').value='';
+    document.getElementById('newCourseDesc').value='';
+    document.getElementById('newCourseImg').value='';
+    renderAdminCoursesList();
+  };
+
+  document.getElementById('changePassBtn').onclick = async ()=>{
+    const p = document.getElementById('newPass').value.trim();
+    if(!p){ return; }
+    await setAdminPass(p);
+    document.getElementById('passMsg').textContent = 'Đã cập nhật mật khẩu.';
+    document.getElementById('newPass').value='';
+  };
+
+  document.getElementById('logoutBtn').onclick = ()=>{
+    state.isAdmin = false;
+    state.view = 'home';
+    render();
+  };
+
+  document.getElementById('addAppBtn').onclick = async ()=>{
+    const title = document.getElementById('newAppTitle').value.trim();
+    const url = document.getElementById('newAppUrl').value.trim();
+    const desc = document.getElementById('newAppDesc').value.trim();
+    const image = document.getElementById('newAppImg').value.trim();
+    if(!title || !url) return;
+    state.apps.push({ id: uid(), title, url, description: desc, image });
+    await saveApps();
+    document.getElementById('newAppTitle').value='';
+    document.getElementById('newAppUrl').value='';
+    document.getElementById('newAppDesc').value='';
+    document.getElementById('newAppImg').value='';
+    renderAdminAppsList();
+  };
+
+  renderAdminCoursesList();
+  renderAdminAppsList();
+}
+
+function renderAdminAppsList(){
+  const container = document.getElementById('appsAdminList');
+  if(!container) return;
+  if(state.apps.length===0){
+    container.innerHTML = '<div class="empty">Chưa có app.</div>';
+    return;
+  }
+  container.innerHTML = state.apps.map(a=>`
+    <div class="admin-course-row">
+      <span class="left-row">
+        ${a.image ? `<img src="${escapeHtml(a.image)}" class="mini-thumb">` : `<span class="mini-thumb-ph">${escapeHtml((a.title||'A')[0].toUpperCase())}</span>`}
+        <strong>${escapeHtml(a.title)}</strong>&nbsp;— <a href="${escapeHtml(a.url)}" target="_blank" style="color:var(--accent); margin-left:4px;">link</a>
+      </span>
+      <button class="small-btn danger" data-action="delApp" data-id="${a.id}">Xóa</button>
+    </div>
+  `).join('');
+  container.querySelectorAll('[data-action="delApp"]').forEach(b=>{
+    b.onclick = async ()=>{
+      state.apps = state.apps.filter(a=>a.id!==b.dataset.id);
+      await saveApps();
+      renderAdminAppsList();
+    };
+  });
+}
+
+function renderAdminCoursesList(){
+  const container = document.getElementById('coursesAdminList');
+  if(!container) return;
+  if(state.courses.length===0){
+    container.innerHTML = '<div class="empty">Chưa có khóa học.</div>';
+    return;
+  }
+  container.innerHTML = state.courses.map(c=>`
+    <div class="admin-course-row" style="flex-direction:column; align-items:stretch;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="left-row">
+          ${c.image ? `<img src="${escapeHtml(c.image)}" class="mini-thumb">` : `<span class="mini-thumb-ph">${escapeHtml((c.title||'K')[0].toUpperCase())}</span>`}
+          <strong>${escapeHtml(c.title)}</strong>
+        </div>
+        <div>
+          <button class="small-btn danger" data-action="delCourse" data-id="${c.id}">Xóa khóa học</button>
+        </div>
+      </div>
+      <div style="margin-top:8px;">
+        ${c.videos.map(v=>`
+          <div class="admin-video-row">
+            <span>${escapeHtml(v.title)} — <a href="${escapeHtml(v.url)}" target="_blank" style="color:var(--accent);">link</a></span>
+            <button class="small-btn danger" data-action="delVideo" data-cid="${c.id}" data-vid="${v.id}">Xóa</button>
+          </div>
+        `).join('')}
+      </div>
+      <div style="margin-top:10px; border-top:1px dashed var(--line); padding-top:10px;">
+        <div class="row">
+          <div><input type="text" placeholder="Tên bài học" class="vTitle" data-cid="${c.id}"></div>
+          <div><input type="text" placeholder="Link Drive hoặc YouTube" class="vUrl" data-cid="${c.id}"></div>
+        </div>
+        <textarea placeholder="Ghi chú (tùy chọn)" class="vNote" data-cid="${c.id}" style="margin-top:8px;"></textarea>
+        <button class="btn secondary" data-action="addVideo" data-cid="${c.id}">+ Thêm video</button>
+      </div>
+    </div>
+  `).join('');
+
+  container.querySelectorAll('[data-action="delCourse"]').forEach(b=>{
+    b.onclick = async ()=>{
+      if(!confirm('Xóa khóa học này?')) return;
+      state.courses = state.courses.filter(c=>c.id!==b.dataset.id);
+      await saveCourses();
+      renderAdminCoursesList();
+    };
+  });
+  container.querySelectorAll('[data-action="delVideo"]').forEach(b=>{
+    b.onclick = async ()=>{
+      const c = state.courses.find(c=>c.id===b.dataset.cid);
+      c.videos = c.videos.filter(v=>v.id!==b.dataset.vid);
+      await saveCourses();
+      renderAdminCoursesList();
+    };
+  });
+  container.querySelectorAll('[data-action="addVideo"]').forEach(b=>{
+    b.onclick = async ()=>{
+      const cid = b.dataset.cid;
+      const c = state.courses.find(c=>c.id===cid);
+      const titleEl = container.querySelector(`.vTitle[data-cid="${cid}"]`);
+      const urlEl = container.querySelector(`.vUrl[data-cid="${cid}"]`);
+      const noteEl = container.querySelector(`.vNote[data-cid="${cid}"]`);
+      const title = titleEl.value.trim();
+      const url = urlEl.value.trim();
+      const note = noteEl.value.trim();
+      if(!title || !url) return;
+      c.videos.push({ id: uid(), title, url, note });
+      await saveCourses();
+      renderAdminCoursesList();
+    };
+  });
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ---------- nav ----------
+document.getElementById('navHome').onclick = ()=>{ state.view='home'; state.currentCourseId=null; render(); };
+document.getElementById('navApps').onclick = ()=>{ state.view='apps'; render(); };
+document.getElementById('navAdmin').onclick = ()=>{ state.view = state.isAdmin ? 'admin' : 'adminLogin'; render(); };
+
+// ---------- init ----------
+(async function init(){
+  app.innerHTML = '<div class="empty">Đang tải...</div>';
+  await loadCourses();
+  await loadApps();
+  render();
+})();
+</script>
+</body>
+</html>
