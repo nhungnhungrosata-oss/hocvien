@@ -511,7 +511,7 @@ setTimeout(()=>{(async()=>{app.innerHTML='<div class="empty">Đang tải dữ li
 
   async function requireAdvanced() {
     const ok = await window.IBEGEN_LIC.requireActive();
-    if (!ok) toast('Khu nâng cao cần kích hoạt key để sử dụng.');
+    if (!ok) toast('Nội dung này cần kích hoạt key để sử dụng.');
     return ok;
   }
 
@@ -522,11 +522,11 @@ setTimeout(()=>{(async()=>{app.innerHTML='<div class="empty">Đang tải dữ li
   }
 
   function freeHero() {
-    return `<section class="hero"><div class="heroMain"><div class="badge">📚 Khóa Miễn Phí</div><h2>Học miễn phí trước, nâng cao sau</h2><p>Học viên có thể vào ngay các khóa miễn phí. Nội dung nâng cao và toàn bộ app được đặt trong khu riêng có key.</p><div class="heroBtns"><button class="qbtn" onclick="setRoute('#free')">📚 Khóa miễn phí</button><button class="qbtn light" onclick="setRoute('#advanced')">🔐 Khóa nâng cao</button></div></div><div class="stats"><div class="stat"><span>Khóa miễn phí</span><b>${freeCourseList().length}</b></div><div class="stat o"><span>Khóa nâng cao</span><b>${advancedCourseList().length}</b></div><div class="stat g"><span>App nâng cao</span><b>${S.apps.length}</b></div></div></section>`;
+    return `<section class="hero"><div class="heroMain"><div class="badge">📚 Khóa Miễn Phí</div><h2>Học miễn phí trước, nâng cao sau</h2><p>Học viên có thể vào ngay các khóa miễn phí. Danh mục nâng cao vẫn xem được danh sách, nhưng từng khóa nâng cao và app sẽ cần key khi mở.</p><div class="heroBtns"><button class="qbtn" onclick="setRoute('#free')">📚 Khóa miễn phí</button><button class="qbtn light" onclick="setRoute('#advanced')">🔐 Khóa nâng cao</button></div></div><div class="stats"><div class="stat"><span>Khóa miễn phí</span><b>${freeCourseList().length}</b></div><div class="stat o"><span>Khóa nâng cao</span><b>${advancedCourseList().length}</b></div><div class="stat g"><span>App nâng cao</span><b>${S.apps.length}</b></div></div></section>`;
   }
 
   function advancedHero() {
-    return `<section class="hero"><div class="heroMain"><div class="badge">🔐 Khóa Nâng Cao</div><h2>Khu học nâng cao dành cho học viên có key</h2><p>Tất cả khóa nâng cao và app công cụ nằm chung trong khu này. Học viên cần kích hoạt key để xem bài học và mở app.</p><div class="heroBtns"><button class="qbtn" onclick="setRoute('#advanced')">🔐 Vào nâng cao</button><button class="qbtn light" onclick="setRoute('#free')">📚 Quay lại miễn phí</button></div></div><div class="stats"><div class="stat"><span>Khóa nâng cao</span><b>${advancedCourseList().length}</b></div><div class="stat o"><span>App / Công cụ</span><b>${S.apps.length}</b></div><div class="stat g"><span>Trạng thái</span><b>KEY</b></div></div></section>`;
+    return `<section class="hero"><div class="heroMain"><div class="badge">🔐 Khóa Nâng Cao</div><h2>Danh sách khóa nâng cao và app</h2><p>Học viên được xem danh sách trong mục này. Khi bấm vào từng khóa nâng cao hoặc từng app, hệ thống mới yêu cầu key kích hoạt.</p><div class="heroBtns"><button class="qbtn" onclick="setRoute('#advanced')">🔐 Khóa nâng cao</button><button class="qbtn light" onclick="setRoute('#free')">📚 Quay lại miễn phí</button></div></div><div class="stats"><div class="stat"><span>Khóa nâng cao</span><b>${advancedCourseList().length}</b></div><div class="stat o"><span>App / Công cụ</span><b>${S.apps.length}</b></div><div class="stat g"><span>Trạng thái</span><b>TỪNG KHÓA</b></div></div></section>`;
   }
 
   function renderCourseGrid(list, emptyText, kind) {
@@ -548,7 +548,7 @@ setTimeout(()=>{(async()=>{app.innerHTML='<div class="empty">Đang tải dữ li
   function advancedPage() {
     const list = advancedCourseList();
     app.innerHTML = advancedHero()
-      + `<div class="advancedGate">Khu này đã được mở bằng key. App chỉ xuất hiện trong danh mục nâng cao.</div>`
+      + `<div class="advancedGate">Danh mục Nâng Cao đang mở để xem danh sách. Key chỉ được yêu cầu khi học viên bấm vào từng khóa học hoặc từng app cụ thể.</div>`
       + `<div class="head"><div><h2>Danh mục Khóa Nâng Cao</h2><p>Các khóa học chuyên sâu, yêu cầu key kích hoạt.</p></div><div class="pill">🔐 ${list.length} khóa nâng cao</div></div>`
       + renderCourseGrid(list, 'Chưa có khóa nâng cao. Vào Quản trị để thêm khóa học và chọn danh mục Nâng cao.', 'advanced')
       + `<div class="sectionSplit"><div class="head"><div><h2>App trong khóa nâng cao</h2><p>Toàn bộ app/công cụ được gom vào khu nâng cao.</p></div><div class="pill">🧩 ${S.apps.length} app</div></div>`
@@ -586,7 +586,7 @@ setTimeout(()=>{(async()=>{app.innerHTML='<div class="empty">Đang tải dữ li
     if (isAdvancedCourse(c)) {
       requireAdvanced().then(ok => {
         if (ok) baseDetail();
-        else setRoute('#free');
+        else setRoute('#advanced');
       });
       return;
     }
@@ -618,7 +618,7 @@ setTimeout(()=>{(async()=>{app.innerHTML='<div class="empty">Đang tải dữ li
         requireAdvanced().then(ok => {
           S.cid = ok ? cid : null;
           S.vid = null;
-          S.view = ok ? 'detail' : 'courses';
+          S.view = ok ? 'detail' : 'advanced';
           render();
           scrollTo({ top: 0, behavior: 'smooth' });
         });
@@ -628,14 +628,9 @@ setTimeout(()=>{(async()=>{app.innerHTML='<div class="empty">Đang tải dữ li
       S.vid = null;
       S.view = 'detail';
     } else if (key === 'advanced') {
-      requireAdvanced().then(ok => {
-        S.cid = null;
-        S.vid = null;
-        S.view = ok ? 'advanced' : 'courses';
-        render();
-        scrollTo({ top: 0, behavior: 'smooth' });
-      });
-      return;
+      S.cid = null;
+      S.vid = null;
+      S.view = 'advanced';
     } else if (key === 'admin') {
       S.view = S.admin ? 'admin' : 'login';
     } else {
