@@ -23,7 +23,7 @@ main{max-width:1180px;margin:auto;padding:26px 18px 80px}.hero{display:grid;grid
 </style>
 </head>
 <body>
-<header class="top"><div class="topin"><div class="brand"><div class="logo">▶</div><div><h1>Học Viên Online</h1><p>Kho bài giảng video & app học tập</p></div></div><nav class="nav"><button id="nCourses" class="on">📚 Khóa học</button><button id="nApps">🧩 App</button><button id="nAdmin">🔐 Quản trị</button></nav></div></header>
+<header class="top"><div class="topin"><div class="brand"><div class="logo">▶</div><div><h1>Học Viên Online</h1><p>Kho bài giảng video & app học tập</p></div></div><nav class="nav"><button id="nCourses" class="on">📚 Miễn phí</button><button id="nApps">🔐 Nâng cao</button><button id="nAdmin">⚙️ Quản trị</button></nav></div></header>
 <main id="app"></main><div id="toast" class="toast"></div>
 <div id="licenseLock" class="licenseLock hide" role="dialog" aria-modal="true" aria-labelledby="licenseTitle">
   <div class="licenseCard">
@@ -475,6 +475,268 @@ setTimeout(()=>{(async()=>{app.innerHTML='<div class="empty">Đang tải dữ li
       const a = appById(saveApp.dataset.id);
       const input = document.querySelector(`.eal[data-id="${CSS.escape(saveApp.dataset.id)}"]`);
       if (a && input) a.locked = input.checked;
+    }
+  }, true);
+})();
+</script>
+<style>
+.categorySelect{border:1px solid var(--line);background:#f8fafc;border-radius:16px;padding:12px 13px}.categorySelect small{display:block;color:var(--mut);font-weight:650;margin-top:5px}.sectionSplit{margin-top:26px}.advancedGate{border:1px solid rgba(249,115,22,.25);background:#fff7ed;color:#9a3412;border-radius:20px;padding:14px 16px;font-weight:850;margin:0 0 18px}.hiddenKeyField{display:none!important}
+</style>
+<script>
+(() => {
+  function isAdvancedCourse(c) {
+    return !!c && (c.category === 'advanced' || c.locked === true);
+  }
+
+  function normalizeAccess() {
+    S.courses.forEach(c => {
+      if (!c.category) c.category = c.locked === true ? 'advanced' : 'free';
+      c.locked = c.category === 'advanced';
+    });
+    S.apps.forEach(a => {
+      a.locked = true;
+      if (!a.category) a.category = 'advanced';
+    });
+  }
+
+  function freeCourseList() {
+    normalizeAccess();
+    return S.courses.filter(c => !isAdvancedCourse(c));
+  }
+
+  function advancedCourseList() {
+    normalizeAccess();
+    return S.courses.filter(isAdvancedCourse);
+  }
+
+  async function requireAdvanced() {
+    const ok = await window.IBEGEN_LIC.requireActive();
+    if (!ok) toast('Khu nâng cao cần kích hoạt key để sử dụng.');
+    return ok;
+  }
+
+  function categoryBadge(kind) {
+    return kind === 'advanced'
+      ? '<span class="lockPill">Cần key</span>'
+      : '<span class="lockPill free">Miễn phí</span>';
+  }
+
+  function freeHero() {
+    return `<section class="hero"><div class="heroMain"><div class="badge">📚 Khóa Miễn Phí</div><h2>Học miễn phí trước, nâng cao sau</h2><p>Học viên có thể vào ngay các khóa miễn phí. Nội dung nâng cao và toàn bộ app được đặt trong khu riêng có key.</p><div class="heroBtns"><button class="qbtn" onclick="setRoute('#free')">📚 Khóa miễn phí</button><button class="qbtn light" onclick="setRoute('#advanced')">🔐 Khóa nâng cao</button></div></div><div class="stats"><div class="stat"><span>Khóa miễn phí</span><b>${freeCourseList().length}</b></div><div class="stat o"><span>Khóa nâng cao</span><b>${advancedCourseList().length}</b></div><div class="stat g"><span>App nâng cao</span><b>${S.apps.length}</b></div></div></section>`;
+  }
+
+  function advancedHero() {
+    return `<section class="hero"><div class="heroMain"><div class="badge">🔐 Khóa Nâng Cao</div><h2>Khu học nâng cao dành cho học viên có key</h2><p>Tất cả khóa nâng cao và app công cụ nằm chung trong khu này. Học viên cần kích hoạt key để xem bài học và mở app.</p><div class="heroBtns"><button class="qbtn" onclick="setRoute('#advanced')">🔐 Vào nâng cao</button><button class="qbtn light" onclick="setRoute('#free')">📚 Quay lại miễn phí</button></div></div><div class="stats"><div class="stat"><span>Khóa nâng cao</span><b>${advancedCourseList().length}</b></div><div class="stat o"><span>App / Công cụ</span><b>${S.apps.length}</b></div><div class="stat g"><span>Trạng thái</span><b>KEY</b></div></div></section>`;
+  }
+
+  function renderCourseGrid(list, emptyText, kind) {
+    return list.length
+      ? `<div class="grid">${list.map((c, i) => `<article class="card course ${kind === 'advanced' ? 'lockedCard' : ''}" tabindex="0" data-id="${esc(c.id)}">${thumb(c.image, c.title, 'Khóa ' + String(i + 1).padStart(2, '0'), 'course')}<div class="body"><h3>${esc(c.title)}</h3><p>${esc(c.description || 'Chưa có mô tả cho khóa học này.')}</p><div class="meta"><span>${(c.videos || []).length} video</span><span>${(c.relatedApps || []).length} app liên quan</span></div><div>${categoryBadge(kind)}</div></div></article>`).join('')}</div>`
+      : `<div class="empty">${emptyText}</div>`;
+  }
+
+  courses = function () {
+    const list = freeCourseList();
+    app.innerHTML = freeHero() + `<div class="head"><div><h2>Danh mục Khóa Miễn Phí</h2><p>Học viên có thể xem ngay, không cần kích hoạt key.</p></div><div class="pill">📚 ${list.length} khóa miễn phí</div></div>` + renderCourseGrid(list, 'Chưa có khóa miễn phí. Vào Quản trị để thêm khóa học và chọn danh mục Miễn phí.', 'free');
+    document.querySelectorAll('.course').forEach(x => {
+      const f = () => openCourse(x.dataset.id);
+      x.onclick = f;
+      x.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') f(); };
+    });
+  };
+
+  function advancedPage() {
+    const list = advancedCourseList();
+    app.innerHTML = advancedHero()
+      + `<div class="advancedGate">Khu này đã được mở bằng key. App chỉ xuất hiện trong danh mục nâng cao.</div>`
+      + `<div class="head"><div><h2>Danh mục Khóa Nâng Cao</h2><p>Các khóa học chuyên sâu, yêu cầu key kích hoạt.</p></div><div class="pill">🔐 ${list.length} khóa nâng cao</div></div>`
+      + renderCourseGrid(list, 'Chưa có khóa nâng cao. Vào Quản trị để thêm khóa học và chọn danh mục Nâng cao.', 'advanced')
+      + `<div class="sectionSplit"><div class="head"><div><h2>App trong khóa nâng cao</h2><p>Toàn bộ app/công cụ được gom vào khu nâng cao.</p></div><div class="pill">🧩 ${S.apps.length} app</div></div>`
+      + (S.apps.length ? `<div class="grid">${S.apps.map((a, i) => `<div class="card lockedCard"><button type="button" style="border:0;background:transparent;padding:0;text-align:inherit;width:100%" onclick="openApp('${esc(a.id)}')">${thumb(a.image, a.title, 'App ' + String(i + 1).padStart(2, '0'), 'app')}</button><div class="body"><h3>${esc(a.title)}</h3><p>${esc(a.description || 'Chưa có mô tả cho app này.')}</p>${relatedCoursesForApp(a)}<div>${categoryBadge('advanced')}</div></div></div>`).join('')}</div>` : `<div class="empty">Chưa có app nào. Vào Quản trị để thêm app/link.</div>`)
+      + `</div>`;
+    document.querySelectorAll('.course').forEach(x => {
+      const f = () => openCourse(x.dataset.id);
+      x.onclick = f;
+      x.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') f(); };
+    });
+  }
+
+  relatedApps = function (c) {
+    if (!isAdvancedCourse(c)) return '';
+    const list = (c.relatedApps || []).map(appById).filter(Boolean);
+    return `<div class="quickBox"><h3>App nâng cao liên quan</h3>${list.length ? `<div class="quickList">${list.map(a => `<button class="quickItem" type="button" onclick="openApp('${esc(a.id)}')"><span class="quickIcon">🔐</span><span class="quickText"><b>${esc(a.title)}</b><span>Cần key nâng cao để mở app</span></span></button>`).join('')}</div>` : `<div class="empty" style="padding:18px">Chưa gắn app liên quan cho khóa nâng cao này.</div>`}</div>`;
+  };
+
+  window.openCourse = async function (cid) {
+    const c = courseById(cid);
+    if (!c) return;
+    if (isAdvancedCourse(c) && !(await requireAdvanced())) return;
+    setRoute('#course=' + encodeURIComponent(cid));
+  };
+
+  window.openApp = async function (aid) {
+    const a = appById(aid);
+    if (!a) return;
+    if (await requireAdvanced()) window.open(a.url, '_blank', 'noopener,noreferrer');
+  };
+
+  const baseDetail = detail;
+  detail = function () {
+    const c = courseById(S.cid);
+    if (isAdvancedCourse(c)) {
+      requireAdvanced().then(ok => {
+        if (ok) baseDetail();
+        else setRoute('#free');
+      });
+      return;
+    }
+    baseDetail();
+  };
+
+  nav = function () {
+    const current = S.view === 'detail' ? courseById(S.cid) : null;
+    nCourses.classList.toggle('on', S.view === 'courses' || (S.view === 'detail' && !isAdvancedCourse(current)));
+    nApps.classList.toggle('on', S.view === 'advanced' || (S.view === 'detail' && isAdvancedCourse(current)));
+    nAdmin.classList.toggle('on', ['admin', 'login'].includes(S.view));
+  };
+
+  render = function () {
+    nav();
+    ({ courses, advanced: advancedPage, detail, login, admin })[S.view]();
+  };
+
+  route = function (hash = location.hash) {
+    normalizeAccess();
+    hash = (hash || '#free').replace('#', '');
+    let [key, val] = hash.split('=');
+    if (key === 'apps') key = 'advanced';
+    if (key === 'courses') key = 'free';
+    if (key === 'course' && val) {
+      const cid = decodeURIComponent(val);
+      const c = courseById(cid);
+      if (isAdvancedCourse(c)) {
+        requireAdvanced().then(ok => {
+          S.cid = ok ? cid : null;
+          S.vid = null;
+          S.view = ok ? 'detail' : 'courses';
+          render();
+          scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        return;
+      }
+      S.cid = cid;
+      S.vid = null;
+      S.view = 'detail';
+    } else if (key === 'advanced') {
+      requireAdvanced().then(ok => {
+        S.cid = null;
+        S.vid = null;
+        S.view = ok ? 'advanced' : 'courses';
+        render();
+        scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      return;
+    } else if (key === 'admin') {
+      S.view = S.admin ? 'admin' : 'login';
+    } else {
+      S.view = 'courses';
+      S.cid = null;
+      S.vid = null;
+    }
+    render();
+    scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  nCourses.onclick = () => setRoute('#free');
+  nApps.onclick = () => setRoute('#advanced');
+  nAdmin.onclick = () => setRoute('#admin');
+  goCourses = () => setRoute('#free');
+  goApps = () => setRoute('#advanced');
+
+  const previousAdmin = admin;
+  admin = function () {
+    previousAdmin();
+    if (S.admin) enhanceAdminCategories();
+  };
+
+  function categoryField(id, value, cls) {
+    return `<div class="field full categoryField"><label>Danh mục khóa học</label><div class="categorySelect"><select ${id ? `id="${id}"` : ''} ${cls ? `class="${cls}"` : ''}><option value="free" ${value !== 'advanced' ? 'selected' : ''}>Khóa Miễn Phí</option><option value="advanced" ${value === 'advanced' ? 'selected' : ''}>Khóa Nâng Cao - cần key</option></select><small>Chọn Nâng Cao thì khóa học sẽ yêu cầu key kích hoạt.</small></div></div>`;
+  }
+
+  function hideKeyToggles() {
+    document.getElementById('cl')?.closest('.field')?.classList.add('hiddenKeyField');
+    document.getElementById('al')?.closest('.field')?.classList.add('hiddenKeyField');
+    document.querySelectorAll('.ecl,.eal').forEach(i => i.closest('.field')?.classList.add('hiddenKeyField'));
+  }
+
+  function enhanceAdminCategories() {
+    hideKeyToggles();
+    if (!document.getElementById('crApps')) return;
+    if (!document.getElementById('ccat')) {
+      crApps.closest('.field').insertAdjacentHTML('afterend', categoryField('ccat', 'free', ''));
+    }
+    document.querySelectorAll('.ecApps').forEach(sel => {
+      const c = courseById(sel.dataset.id);
+      if (!c || document.querySelector(`.eccat[data-id="${CSS.escape(c.id)}"]`)) return;
+      sel.closest('.field').insertAdjacentHTML('afterend', categoryField('', isAdvancedCourse(c) ? 'advanced' : 'free', `eccat" data-id="${esc(c.id)}`));
+    });
+  }
+
+  addCourse = async function () {
+    const title = ct.value.trim();
+    const description = cd.value.trim();
+    const image = (await fileToDataUrl(ciFile.files[0])) || ci.value.trim();
+    const relatedApps = selectedValues(crApps);
+    const category = document.getElementById('ccat')?.value === 'advanced' ? 'advanced' : 'free';
+    if (!title) return toast('Vui lòng nhập tên khóa học.');
+    const cid = id();
+    S.courses.unshift({ id: cid, title, description, image, relatedApps, category, locked: category === 'advanced', videos: [] });
+    syncAppLinks(cid, [], relatedApps);
+    await saveC();
+    await saveA();
+    markDirty();
+    ct.value = cd.value = ci.value = '';
+    ciFile.value = '';
+    admin();
+    toast(category === 'advanced' ? 'Đã thêm khóa nâng cao.' : 'Đã thêm khóa miễn phí.');
+  };
+
+  addApp = async function () {
+    const title = at.value.trim();
+    const url = au.value.trim();
+    const description = ad.value.trim();
+    const image = (await fileToDataUrl(aiFile.files[0])) || ai.value.trim();
+    const relatedCourses = selectedValues(arCourses);
+    if (!title || !url) return toast('Vui lòng nhập tên app và link app.');
+    const aid = id();
+    S.apps.unshift({ id: aid, title, url, description, image, relatedCourses, category: 'advanced', locked: true });
+    syncCourseLinks(aid, [], relatedCourses);
+    await saveA();
+    await saveC();
+    markDirty();
+    at.value = au.value = ad.value = ai.value = '';
+    aiFile.value = '';
+    admin();
+    toast('Đã thêm app vào khu nâng cao.');
+  };
+
+  document.addEventListener('click', e => {
+    const saveCourse = e.target.closest('[data-act="sc"]');
+    if (saveCourse) {
+      const c = courseById(saveCourse.dataset.id);
+      const input = document.querySelector(`.eccat[data-id="${CSS.escape(saveCourse.dataset.id)}"]`);
+      if (c && input) {
+        c.category = input.value === 'advanced' ? 'advanced' : 'free';
+        c.locked = c.category === 'advanced';
+      }
+    }
+    const saveApp = e.target.closest('[data-act="sa"]');
+    if (saveApp) {
+      const a = appById(saveApp.dataset.id);
+      if (a) {
+        a.category = 'advanced';
+        a.locked = true;
+      }
     }
   }, true);
 })();
