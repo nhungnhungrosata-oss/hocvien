@@ -484,6 +484,8 @@ setTimeout(()=>{(async()=>{app.innerHTML='<div class="empty">Đang tải dữ li
 </style>
 <script>
 (() => {
+  let advancedUnlocked = false;
+
   function isAdvancedCourse(c) {
     return !!c && (c.category === 'advanced' || c.locked === true);
   }
@@ -511,27 +513,28 @@ setTimeout(()=>{(async()=>{app.innerHTML='<div class="empty">Đang tải dữ li
 
   async function requireAdvanced() {
     const ok = await window.IBEGEN_LIC.requireActive();
-    if (!ok) toast('Nội dung này cần kích hoạt key để sử dụng.');
+    advancedUnlocked = !!ok;
+    if (!ok) toast('Danh mục Nâng Cao cần kích hoạt key để sử dụng.');
     return ok;
   }
 
   function categoryBadge(kind) {
     return kind === 'advanced'
-      ? '<span class="lockPill">Cần key</span>'
+      ? '<span class="lockPill">Nâng cao</span>'
       : '<span class="lockPill free">Miễn phí</span>';
   }
 
   function freeHero() {
-    return `<section class="hero"><div class="heroMain"><div class="badge">📚 Khóa Miễn Phí</div><h2>Học miễn phí trước, nâng cao sau</h2><p>Học viên có thể vào ngay các khóa miễn phí. Danh mục nâng cao vẫn xem được danh sách, nhưng từng khóa nâng cao và app sẽ cần key khi mở.</p><div class="heroBtns"><button class="qbtn" onclick="setRoute('#free')">📚 Khóa miễn phí</button><button class="qbtn light" onclick="setRoute('#advanced')">🔐 Khóa nâng cao</button></div></div><div class="stats"><div class="stat"><span>Khóa miễn phí</span><b>${freeCourseList().length}</b></div><div class="stat o"><span>Khóa nâng cao</span><b>${advancedCourseList().length}</b></div><div class="stat g"><span>App nâng cao</span><b>${S.apps.length}</b></div></div></section>`;
+    return `<section class="hero"><div class="heroMain"><div class="badge">📚 Khóa Miễn Phí</div><h2>Học miễn phí trước, nâng cao sau</h2><p>Học viên có thể vào ngay các khóa miễn phí. Danh mục nâng cao được khóa bằng key riêng; sau khi mở danh mục, các khóa bên trong xem bình thường.</p><div class="heroBtns"><button class="qbtn" onclick="setRoute('#free')">📚 Khóa miễn phí</button><button class="qbtn light" onclick="setRoute('#advanced')">🔐 Khóa nâng cao</button></div></div><div class="stats"><div class="stat"><span>Khóa miễn phí</span><b>${freeCourseList().length}</b></div><div class="stat o"><span>Khóa nâng cao</span><b>${advancedCourseList().length}</b></div><div class="stat g"><span>App nâng cao</span><b>${S.apps.length}</b></div></div></section>`;
   }
 
   function advancedHero() {
-    return `<section class="hero"><div class="heroMain"><div class="badge">🔐 Khóa Nâng Cao</div><h2>Danh sách khóa nâng cao và app</h2><p>Học viên được xem danh sách trong mục này. Khi bấm vào từng khóa nâng cao hoặc từng app, hệ thống mới yêu cầu key kích hoạt.</p><div class="heroBtns"><button class="qbtn" onclick="setRoute('#advanced')">🔐 Khóa nâng cao</button><button class="qbtn light" onclick="setRoute('#free')">📚 Quay lại miễn phí</button></div></div><div class="stats"><div class="stat"><span>Khóa nâng cao</span><b>${advancedCourseList().length}</b></div><div class="stat o"><span>App / Công cụ</span><b>${S.apps.length}</b></div><div class="stat g"><span>Trạng thái</span><b>TỪNG KHÓA</b></div></div></section>`;
+    return `<section class="hero"><div class="heroMain"><div class="badge">🔐 Khóa Nâng Cao</div><h2>Danh mục nâng cao đã mở</h2><p>Key chỉ dùng để mở danh mục Nâng Cao. Sau khi vào được danh mục này, học viên có thể chọn khóa học hoặc app bên trong mà không bị hỏi key từng khóa.</p><div class="heroBtns"><button class="qbtn" onclick="setRoute('#advanced')">🔐 Khóa nâng cao</button><button class="qbtn light" onclick="setRoute('#free')">📚 Quay lại miễn phí</button></div></div><div class="stats"><div class="stat"><span>Khóa nâng cao</span><b>${advancedCourseList().length}</b></div><div class="stat o"><span>App / Công cụ</span><b>${S.apps.length}</b></div><div class="stat g"><span>Trạng thái</span><b>ĐÃ MỞ</b></div></div></section>`;
   }
 
   function renderCourseGrid(list, emptyText, kind) {
     return list.length
-      ? `<div class="grid">${list.map((c, i) => `<article class="card course ${kind === 'advanced' ? 'lockedCard' : ''}" tabindex="0" data-id="${esc(c.id)}">${thumb(c.image, c.title, 'Khóa ' + String(i + 1).padStart(2, '0'), 'course')}<div class="body"><h3>${esc(c.title)}</h3><p>${esc(c.description || 'Chưa có mô tả cho khóa học này.')}</p><div class="meta"><span>${(c.videos || []).length} video</span><span>${(c.relatedApps || []).length} app liên quan</span></div><div>${categoryBadge(kind)}</div></div></article>`).join('')}</div>`
+      ? `<div class="grid">${list.map((c, i) => `<article class="card course" tabindex="0" data-id="${esc(c.id)}">${thumb(c.image, c.title, 'Khóa ' + String(i + 1).padStart(2, '0'), 'course')}<div class="body"><h3>${esc(c.title)}</h3><p>${esc(c.description || 'Chưa có mô tả cho khóa học này.')}</p><div class="meta"><span>${(c.videos || []).length} video</span><span>${(c.relatedApps || []).length} app liên quan</span></div><div>${categoryBadge(kind)}</div></div></article>`).join('')}</div>`
       : `<div class="empty">${emptyText}</div>`;
   }
 
@@ -548,11 +551,11 @@ setTimeout(()=>{(async()=>{app.innerHTML='<div class="empty">Đang tải dữ li
   function advancedPage() {
     const list = advancedCourseList();
     app.innerHTML = advancedHero()
-      + `<div class="advancedGate">Danh mục Nâng Cao đang mở để xem danh sách. Key chỉ được yêu cầu khi học viên bấm vào từng khóa học hoặc từng app cụ thể.</div>`
+      + `<div class="advancedGate">Danh mục Nâng Cao đã được mở bằng key. Các khóa học cụ thể bên dưới không bị khóa riêng.</div>`
       + `<div class="head"><div><h2>Danh mục Khóa Nâng Cao</h2><p>Các khóa học chuyên sâu, yêu cầu key kích hoạt.</p></div><div class="pill">🔐 ${list.length} khóa nâng cao</div></div>`
       + renderCourseGrid(list, 'Chưa có khóa nâng cao. Vào Quản trị để thêm khóa học và chọn danh mục Nâng cao.', 'advanced')
       + `<div class="sectionSplit"><div class="head"><div><h2>App trong khóa nâng cao</h2><p>Toàn bộ app/công cụ được gom vào khu nâng cao.</p></div><div class="pill">🧩 ${S.apps.length} app</div></div>`
-      + (S.apps.length ? `<div class="grid">${S.apps.map((a, i) => `<div class="card lockedCard"><button type="button" style="border:0;background:transparent;padding:0;text-align:inherit;width:100%" onclick="openApp('${esc(a.id)}')">${thumb(a.image, a.title, 'App ' + String(i + 1).padStart(2, '0'), 'app')}</button><div class="body"><h3>${esc(a.title)}</h3><p>${esc(a.description || 'Chưa có mô tả cho app này.')}</p>${relatedCoursesForApp(a)}<div>${categoryBadge('advanced')}</div></div></div>`).join('')}</div>` : `<div class="empty">Chưa có app nào. Vào Quản trị để thêm app/link.</div>`)
+      + (S.apps.length ? `<div class="grid">${S.apps.map((a, i) => `<div class="card"><button type="button" style="border:0;background:transparent;padding:0;text-align:inherit;width:100%" onclick="openApp('${esc(a.id)}')">${thumb(a.image, a.title, 'App ' + String(i + 1).padStart(2, '0'), 'app')}</button><div class="body"><h3>${esc(a.title)}</h3><p>${esc(a.description || 'Chưa có mô tả cho app này.')}</p>${relatedCoursesForApp(a)}<div>${categoryBadge('advanced')}</div></div></div>`).join('')}</div>` : `<div class="empty">Chưa có app nào. Vào Quản trị để thêm app/link.</div>`)
       + `</div>`;
     document.querySelectorAll('.course').forEach(x => {
       const f = () => openCourse(x.dataset.id);
@@ -564,29 +567,29 @@ setTimeout(()=>{(async()=>{app.innerHTML='<div class="empty">Đang tải dữ li
   relatedApps = function (c) {
     if (!isAdvancedCourse(c)) return '';
     const list = (c.relatedApps || []).map(appById).filter(Boolean);
-    return `<div class="quickBox"><h3>App nâng cao liên quan</h3>${list.length ? `<div class="quickList">${list.map(a => `<button class="quickItem" type="button" onclick="openApp('${esc(a.id)}')"><span class="quickIcon">🔐</span><span class="quickText"><b>${esc(a.title)}</b><span>Cần key nâng cao để mở app</span></span></button>`).join('')}</div>` : `<div class="empty" style="padding:18px">Chưa gắn app liên quan cho khóa nâng cao này.</div>`}</div>`;
+    return `<div class="quickBox"><h3>App nâng cao liên quan</h3>${list.length ? `<div class="quickList">${list.map(a => `<button class="quickItem" type="button" onclick="openApp('${esc(a.id)}')"><span class="quickIcon">↗</span><span class="quickText"><b>${esc(a.title)}</b><span>App trong danh mục nâng cao</span></span></button>`).join('')}</div>` : `<div class="empty" style="padding:18px">Chưa gắn app liên quan cho khóa nâng cao này.</div>`}</div>`;
   };
 
   window.openCourse = async function (cid) {
     const c = courseById(cid);
     if (!c) return;
-    if (isAdvancedCourse(c) && !(await requireAdvanced())) return;
+    if (isAdvancedCourse(c) && !advancedUnlocked && !(await requireAdvanced())) return;
     setRoute('#course=' + encodeURIComponent(cid));
   };
 
   window.openApp = async function (aid) {
     const a = appById(aid);
     if (!a) return;
-    if (await requireAdvanced()) window.open(a.url, '_blank', 'noopener,noreferrer');
+    if (advancedUnlocked || await requireAdvanced()) window.open(a.url, '_blank', 'noopener,noreferrer');
   };
 
   const baseDetail = detail;
   detail = function () {
     const c = courseById(S.cid);
-    if (isAdvancedCourse(c)) {
+    if (isAdvancedCourse(c) && !advancedUnlocked) {
       requireAdvanced().then(ok => {
         if (ok) baseDetail();
-        else setRoute('#advanced');
+        else setRoute('#free');
       });
       return;
     }
@@ -614,11 +617,11 @@ setTimeout(()=>{(async()=>{app.innerHTML='<div class="empty">Đang tải dữ li
     if (key === 'course' && val) {
       const cid = decodeURIComponent(val);
       const c = courseById(cid);
-      if (isAdvancedCourse(c)) {
+      if (isAdvancedCourse(c) && !advancedUnlocked) {
         requireAdvanced().then(ok => {
           S.cid = ok ? cid : null;
           S.vid = null;
-          S.view = ok ? 'detail' : 'advanced';
+          S.view = ok ? 'detail' : 'courses';
           render();
           scrollTo({ top: 0, behavior: 'smooth' });
         });
@@ -628,6 +631,16 @@ setTimeout(()=>{(async()=>{app.innerHTML='<div class="empty">Đang tải dữ li
       S.vid = null;
       S.view = 'detail';
     } else if (key === 'advanced') {
+      if (!advancedUnlocked) {
+        requireAdvanced().then(ok => {
+          S.cid = null;
+          S.vid = null;
+          S.view = ok ? 'advanced' : 'courses';
+          render();
+          scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        return;
+      }
       S.cid = null;
       S.vid = null;
       S.view = 'advanced';
