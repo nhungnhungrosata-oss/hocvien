@@ -776,7 +776,10 @@ setTimeout(()=>{(async()=>{app.innerHTML='<div class="empty">Đang tải dữ li
     try{
       if(useR2()){
         var data=await apiGetData();
-        S.prompts=Array.isArray(data.prompts)?data.prompts:[];
+        var embedded=(S.courses||[]).find(function(x){return Array.isArray(x._imagePrompts);})
+          ||(S.apps||[]).find(function(x){return Array.isArray(x._imagePrompts);});
+        var localBackup=JSON.parse(localStorage.getItem(PROMPT_STORAGE_KEY)||'[]');
+        S.prompts=Array.isArray(data.prompts)?data.prompts:(embedded?embedded._imagePrompts:localBackup);
       }else{
         S.prompts=JSON.parse(localStorage.getItem(PROMPT_STORAGE_KEY)||'[]');
       }
@@ -785,16 +788,21 @@ setTimeout(()=>{(async()=>{app.innerHTML='<div class="empty">Đang tải dữ li
   };
 
   async function savePrompts(){
+    var promptData=S.prompts||[];
+    localStorage.setItem(PROMPT_STORAGE_KEY,JSON.stringify(promptData));
+    (S.courses||[]).forEach(function(x){delete x._imagePrompts;});
+    (S.apps||[]).forEach(function(x){delete x._imagePrompts;});
+    if((S.courses||[]).length)S.courses[0]._imagePrompts=promptData;
+    else if((S.apps||[]).length)S.apps[0]._imagePrompts=promptData;
     if(useR2()){
       var current=await apiGetData().catch(function(){return {courses:S.courses||[],apps:S.apps||[]};});
       current.courses=S.courses||[];
       current.apps=S.apps||[];
-      current.prompts=S.prompts||[];
+      current.prompts=promptData;
       current.updatedAt=new Date().toISOString();
       await apiSaveData(current);
       API_CACHE=current;
     }
-    localStorage.setItem(PROMPT_STORAGE_KEY,JSON.stringify(S.prompts||[]));
   }
 
   function promptItemById(pid){
