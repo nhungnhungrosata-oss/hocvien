@@ -749,5 +749,183 @@ setTimeout(()=>{(async()=>{app.innerHTML='<div class="empty">Đang tải dữ li
   }, true);
 })();
 </script>
+
+<style>
+/* PROMPT_IMAGE_GALLERY_V1 */
+.promptGalleryHero{background:linear-gradient(135deg,#172554,#2563eb 58%,#7c3aed);color:#fff;border-radius:30px;padding:30px;margin-bottom:24px;box-shadow:var(--shadow)}
+.promptGalleryHero h2{margin:0;font-size:clamp(30px,5vw,48px);letter-spacing:-.05em}.promptGalleryHero p{margin:10px 0 0;color:rgba(255,255,255,.84);max-width:780px}
+.promptGuide{display:flex;gap:10px;align-items:flex-start;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;border-radius:20px;padding:14px 16px;margin-bottom:20px;font-weight:750}
+.promptGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px}.promptCard{background:#fff;border:1px solid var(--line);border-radius:24px;overflow:hidden;box-shadow:0 14px 36px rgba(15,23,42,.08);transition:.2s}.promptCard:hover{transform:translateY(-5px);box-shadow:0 24px 54px rgba(15,23,42,.14)}
+.promptImage{aspect-ratio:9/16;background:linear-gradient(145deg,#dbeafe,#ede9fe);overflow:hidden}.promptImage img{width:100%;height:100%;display:block;object-fit:cover}.promptCardBody{padding:14px}.promptCardBody h3{margin:0 0 12px;color:var(--ink);font-size:17px}.copyPromptBtn{width:100%;border:0;border-radius:15px;padding:12px 14px;background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;font-weight:950}
+.promptAdminImage{width:88px;aspect-ratio:9/16;border-radius:14px;overflow:hidden;background:#e2e8f0;display:grid;place-items:center;flex:0 0 auto}.promptAdminImage img{width:100%;height:100%;object-fit:cover}
+@media(max-width:680px){.nav{grid-template-columns:repeat(4,1fr)}.promptGalleryHero{padding:22px;border-radius:24px}.promptGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.promptCard{border-radius:18px}.promptCardBody{padding:10px}.promptCardBody h3{font-size:14px}.copyPromptBtn{font-size:12px;padding:11px 8px}.promptGuide{font-size:13px}}
+</style>
+<script>
+(function(){
+  var PROMPT_STORAGE_KEY='hocvien_image_prompts';
+  S.prompts=Array.isArray(S.prompts)?S.prompts:[];
+
+  var adminNav=document.getElementById('nAdmin');
+  if(adminNav && !document.getElementById('nPrompts')){
+    adminNav.insertAdjacentHTML('beforebegin','<button id="nPrompts">🖼️ Prompt Ảnh</button>');
+  }
+
+  var baseLoadPrompt=load;
+  load=async function(){
+    await baseLoadPrompt();
+    try{
+      if(useR2()){
+        var data=await apiGetData();
+        S.prompts=Array.isArray(data.prompts)?data.prompts:[];
+      }else{
+        S.prompts=JSON.parse(localStorage.getItem(PROMPT_STORAGE_KEY)||'[]');
+      }
+    }catch(e){S.prompts=[]}
+    S.prompts.forEach(function(item){item.id=item.id||id();});
+  };
+
+  async function savePrompts(){
+    if(useR2()){
+      var current=await apiGetData().catch(function(){return {courses:S.courses||[],apps:S.apps||[]};});
+      current.courses=S.courses||[];
+      current.apps=S.apps||[];
+      current.prompts=S.prompts||[];
+      current.updatedAt=new Date().toISOString();
+      await apiSaveData(current);
+      API_CACHE=current;
+    }
+    localStorage.setItem(PROMPT_STORAGE_KEY,JSON.stringify(S.prompts||[]));
+  }
+
+  function promptItemById(pid){
+    return (S.prompts||[]).find(function(item){return item.id===pid;});
+  }
+
+  window.copyImagePrompt=async function(pid){
+    var item=promptItemById(pid);
+    if(!item)return;
+    try{
+      await navigator.clipboard.writeText(item.prompt);
+      toast('Đã copy prompt tạo ảnh.');
+    }catch(e){
+      window.prompt('Copy prompt tạo ảnh:',item.prompt);
+    }
+  };
+
+  function promptGallery(){
+    var list=S.prompts||[];
+    app.innerHTML='<section class="promptGalleryHero"><h2>Prompt Tạo Ảnh</h2><p>Chọn mẫu ảnh dọc 9:16 phù hợp và copy prompt để tạo hình ảnh mang khuôn mặt của chính bạn.</p></section>'
+      +'<div class="promptGuide"><span>💡</span><div><b>Hướng dẫn sử dụng:</b> Copy prompt này, dán vào ChatGPT hoặc Gemini kèm khuôn mặt của bạn để tạo ảnh.</div></div>'
+      +'<div class="head"><div><h2>Thư viện mẫu ảnh 9:16</h2><p>Nhấn nút bên dưới mỗi ảnh để sao chép prompt.</p></div><div class="pill">🖼️ '+list.length+' mẫu</div></div>'
+      +(list.length?'<div class="promptGrid">'+list.map(function(item,i){
+        return '<article class="promptCard"><div class="promptImage">'+(item.image?'<img src="'+esc(item.image)+'" alt="'+esc(item.title||('Mẫu ảnh '+(i+1)))+'" loading="lazy">':'<div class="ph">🖼️</div>')+'</div><div class="promptCardBody"><h3>'+esc(item.title||('Mẫu ảnh '+String(i+1).padStart(2,'0')))+'</h3><button class="copyPromptBtn" type="button" onclick="copyImagePrompt(\''+esc(item.id)+'\')">📋 Copy Prompt</button></div></article>';
+      }).join('')+'</div>':'<div class="empty">Chưa có mẫu ảnh. Quản trị viên có thể thêm ảnh và prompt trong mục <b>Quản trị</b>.</div>');
+  }
+
+  var baseRoutePrompt=route;
+  route=function(hash){
+    var clean=(hash||location.hash||'').replace('#','').split('=')[0];
+    if(clean==='prompts'){
+      S.view='prompts';S.cid=null;S.vid=null;render();scrollTo({top:0,behavior:'smooth'});return;
+    }
+    baseRoutePrompt(hash);
+  };
+
+  var baseNavPrompt=nav;
+  nav=function(){
+    baseNavPrompt();
+    var el=document.getElementById('nPrompts');
+    if(el)el.classList.toggle('on',S.view==='prompts');
+  };
+
+  var baseRenderPrompt=render;
+  render=function(){
+    if(S.view==='prompts'){nav();promptGallery();return;}
+    baseRenderPrompt();
+  };
+
+  var promptNav=document.getElementById('nPrompts');
+  if(promptNav)promptNav.onclick=function(){setRoute('#prompts');};
+
+  function promptAdminMarkup(){
+    return '<section class="panel" id="promptAdminPanel"><div class="panelHead"><div><h2>Prompt Tạo Ảnh</h2><small>Thêm ảnh dọc 9:16 và prompt tương ứng cho học viên sao chép.</small></div></div>'
+      +'<div class="form"><div class="field"><label>Tên mẫu ảnh</label><input id="promptTitle" placeholder="Ví dụ: Dược sĩ trong nhà thuốc"></div><div class="field"><label>Ảnh mẫu 9:16</label><input id="promptImageUrl" placeholder="Dán link ảnh https://..."><span class="uploadHint">Hoặc chọn ảnh từ máy:</span><input id="promptImageFile" type="file" accept="image/*"></div><div class="field full"><label>Prompt tạo ảnh</label><textarea id="promptText" rows="8" placeholder="Nhập đầy đủ prompt tạo ảnh..."></textarea></div></div>'
+      +'<div class="actions"><button class="btn" id="addPromptImage" type="button">+ Thêm ảnh và prompt</button></div></section>'
+      +'<section class="panel"><div class="panelHead"><div><h2>Danh sách Prompt Tạo Ảnh</h2><small>Có thể sửa ảnh, tên và nội dung prompt đã lưu.</small></div></div><div id="promptAdminList" class="adminList"></div></section>';
+  }
+
+  function renderPromptAdminList(){
+    var w=document.getElementById('promptAdminList');
+    if(!w)return;
+    var list=S.prompts||[];
+    if(!list.length){w.innerHTML='<div class="empty">Chưa có prompt tạo ảnh.</div>';return;}
+    w.innerHTML=list.map(function(item){
+      return '<div class="adm"><div class="admRow"><div class="admMain"><div class="promptAdminImage">'+(item.image?'<img src="'+esc(item.image)+'" alt="'+esc(item.title||'Mẫu ảnh')+'">':'🖼️')+'</div><div class="at"><b>'+esc(item.title||'Mẫu ảnh 9:16')+'</b><small>'+esc((item.prompt||'').slice(0,130))+((item.prompt||'').length>130?'...':'')+'</small></div></div><div class="videoActions"><button class="small edit" type="button" data-prompt-edit="'+esc(item.id)+'">Sửa</button><button class="small red" type="button" data-prompt-delete="'+esc(item.id)+'">Xóa</button></div></div>'
+        +'<div class="editBox" data-prompt-box="'+esc(item.id)+'"><div class="form"><div><label>Tên mẫu ảnh</label><input data-prompt-title="'+esc(item.id)+'" value="'+esc(item.title||'')+'"></div><div><label>Link ảnh 9:16</label><input data-prompt-image="'+esc(item.id)+'" value="'+esc(item.image||'')+'"><span class="uploadHint">Hoặc chọn ảnh mới:</span><input data-prompt-file="'+esc(item.id)+'" type="file" accept="image/*"></div><div class="field full"><label>Prompt tạo ảnh</label><textarea data-prompt-text="'+esc(item.id)+'" rows="8">'+esc(item.prompt||'')+'</textarea></div></div><div class="actions"><button class="btn sec" type="button" data-prompt-save="'+esc(item.id)+'">Lưu thay đổi</button><button class="btn ghost" type="button" data-prompt-cancel="'+esc(item.id)+'">Hủy</button></div></div></div>';
+    }).join('');
+
+    w.querySelectorAll('[data-prompt-edit]').forEach(function(btn){btn.onclick=function(){w.querySelector('[data-prompt-box="'+CSS.escape(btn.dataset.promptEdit)+'"]').classList.add('show');};});
+    w.querySelectorAll('[data-prompt-cancel]').forEach(function(btn){btn.onclick=function(){w.querySelector('[data-prompt-box="'+CSS.escape(btn.dataset.promptCancel)+'"]').classList.remove('show');};});
+    w.querySelectorAll('[data-prompt-delete]').forEach(function(btn){btn.onclick=async function(){
+      if(!confirm('Xóa mẫu ảnh và prompt này?'))return;
+      S.prompts=S.prompts.filter(function(x){return x.id!==btn.dataset.promptDelete;});
+      await savePrompts();markDirty();renderPromptAdminList();toast('Đã xóa prompt tạo ảnh.');
+    };});
+    w.querySelectorAll('[data-prompt-save]').forEach(function(btn){btn.onclick=async function(){
+      var pid=btn.dataset.promptSave,item=promptItemById(pid);if(!item)return;
+      var file=w.querySelector('[data-prompt-file="'+CSS.escape(pid)+'"]').files[0];
+      var uploaded=await fileToDataUrl(file);
+      item.title=w.querySelector('[data-prompt-title="'+CSS.escape(pid)+'"]').value.trim()||'Mẫu ảnh 9:16';
+      item.image=uploaded||w.querySelector('[data-prompt-image="'+CSS.escape(pid)+'"]').value.trim()||item.image;
+      item.prompt=w.querySelector('[data-prompt-text="'+CSS.escape(pid)+'"]').value.trim();
+      if(!item.prompt)return toast('Vui lòng nhập prompt tạo ảnh.');
+      await savePrompts();markDirty();renderPromptAdminList();toast('Đã lưu thay đổi.');
+    };});
+  }
+
+  var baseAdminPrompt=admin;
+  admin=function(){
+    baseAdminPrompt();
+    if(!S.admin)return;
+    var securityPanel=Array.from(app.querySelectorAll('.panel')).find(function(panel){return panel.textContent.includes('Bảo mật quản trị');});
+    if(securityPanel)securityPanel.insertAdjacentHTML('beforebegin',promptAdminMarkup());else app.insertAdjacentHTML('beforeend',promptAdminMarkup());
+    var addBtn=document.getElementById('addPromptImage');
+    if(addBtn)addBtn.onclick=async function(){
+      var title=document.getElementById('promptTitle').value.trim()||('Mẫu ảnh '+String((S.prompts||[]).length+1).padStart(2,'0'));
+      var promptText=document.getElementById('promptText').value.trim();
+      var image=(await fileToDataUrl(document.getElementById('promptImageFile').files[0]))||document.getElementById('promptImageUrl').value.trim();
+      if(!image)return toast('Vui lòng chọn ảnh hoặc nhập link ảnh.');
+      if(!promptText)return toast('Vui lòng nhập prompt tạo ảnh.');
+      S.prompts.unshift({id:id(),title:title,image:image,prompt:promptText});
+      await savePrompts();markDirty();admin();toast('Đã thêm ảnh và prompt.');
+    };
+    renderPromptAdminList();
+  };
+
+  var baseExportPrompt=exportData;
+  exportData=async function(){
+    var data={version:2,exportedAt:new Date().toISOString(),courses:S.courses,apps:S.apps,prompts:S.prompts,passHash:await store.get(PK)};
+    downloadFile('luu-tru.json',JSON.stringify(data,null,2));S.dirty=false;
+    var el=document.getElementById('dirtyNotice');if(el)el.style.display='none';
+    toast('Đã xuất backup gồm khóa học, app và prompt ảnh.');
+  };
+
+  var baseImportPrompt=importData;
+  importData=async function(e){
+    var file=e.target.files&&e.target.files[0];if(!file)return;
+    try{
+      var text=await file.text(),data=JSON.parse(text);
+      if(!Array.isArray(data.courses)||!Array.isArray(data.apps)){toast('File backup không đúng định dạng.');return;}
+      if(!confirm('Nhập dữ liệu sẽ ghi đè dữ liệu hiện tại. Tiếp tục?'))return;
+      S.courses=data.courses;S.apps=data.apps;S.prompts=Array.isArray(data.prompts)?data.prompts:[];
+      await saveC();await saveA();await savePrompts();
+      if(data.passHash)await store.set(PK,data.passHash);
+      admin();toast('Đã nhập đầy đủ dữ liệu thành công.');
+    }catch(err){toast('Không đọc được file backup.');}
+    finally{e.target.value='';}
+  };
+})();
+</script>
+
 </body>
 </html>
